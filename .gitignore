@@ -1,0 +1,8 @@
+.env
+.Renviron
+.Rhistory
+.RData
+.Rproj.user
+*.Rcheck/
+oddsrelay_*.tar.gz
+tests/testthat/_problems/

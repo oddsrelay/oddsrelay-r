@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "missing_api_key",
+    "message": "No API key presented. Send Authorization: Bearer or_live_… or x-api-key.",
+    "request_id": "or_req_00000000000000000000000000000000"
+  }
+}

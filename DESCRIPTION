@@ -1,0 +1,31 @@
+Package: oddsrelay
+Title: Client for the 'OddsRelay' Sports Odds API
+Version: 0.1.0
+Authors@R: 
+    person("OddsRelay", role = c("aut", "cre", "cph"), email = "hello@oddsrelay.io")
+Description: Provides one function for each read endpoint of the
+    'OddsRelay' web service <https://oddsrelay.io/docs>, which serves
+    bookmaker and exchange odds for the UK and Ireland. Requests ask for
+    compressed replies, send entity tags so that unchanged data is not
+    transferred again, wait as the service asks when it is busy, and signal
+    refusals as classed conditions that carry the service's error code and
+    request id. Replies are returned as lists and data frames, with the
+    token and rate limit headers attached as attributes.
+License: MIT + file LICENSE
+URL: https://github.com/oddsrelay/oddsrelay-r, https://oddsrelay.io/docs
+BugReports: https://github.com/oddsrelay/oddsrelay-r/issues
+Depends: 
+    R (>= 4.1.0)
+Imports: 
+    httr2 (>= 1.2.0),
+    jsonlite,
+    stats,
+    utils
+Suggests: 
+    testthat (>= 3.1.7),
+    withr
+Config/oddsrelay/contract-version: 2026-07-08
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0
