@@ -149,7 +149,8 @@ tryCatch(
 )
 ```
 
-A 429 is retried for you: the package waits the `Retry-After` seconds and tries again, three requests in all.
+A 429 is retried for you: the package says how long it will wait, waits the `Retry-After` seconds and tries again,
+three requests in all.
 Network failures are left as 'httr2' signals them, so a long-running loop also handles `httr2_failure`.
 
 ## Tokens and rate limits
@@ -160,12 +161,14 @@ Every result carries the reply's headers as attributes:
 - `rate_limit`: `limit`, `remaining` and `reset`, from the `X-RateLimit-*` headers
 - `etag`, `request_id` and `not_modified`
 
-A header the reply did not carry reads as `NA`.
+A header the reply did not carry reads as `NA`. Printing a result shows the body and one line of tokens, not the
+attributes; `unclass()` gives the plain list.
 
 ## Your key
 
 The key travels only in the `Authorization` header. The package never puts it in a URL, and it is redacted when a
-request is printed and removed from any condition message. Spaces and newlines around the key, common when it is
+request is printed and removed from any condition message. A filter named like a key (`key`, `api_key`, `token` or
+any name starting with a dot) is refused before anything is sent, so a misspelt `.key` never reaches a URL. Spaces and newlines around the key, common when it is
 read from a file, are dropped.
 
 ## Versions

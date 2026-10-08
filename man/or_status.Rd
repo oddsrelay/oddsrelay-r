@@ -8,7 +8,7 @@
 \alias{or_openapi}
 \title{Service state}
 \usage{
-or_status(...)
+or_status(..., .key = NULL)
 
 or_coverage(..., .key = NULL)
 

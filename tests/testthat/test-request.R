@@ -48,6 +48,37 @@ test_that("filters are written the way the API reads them", {
   expect_error(query_params(list("tennis")), "needs a name")
 })
 
+test_that("a key passed under the wrong name never reaches a URL", {
+  fresh_cache()
+  withr::local_envvar(ODDSRELAY_KEY = "")
+  api <- mock_api(fixture_response("v2-status.status.json"))
+  or_status(.key = "wrong-place-secret") # keyless route: accepted, never sent
+  expect_false(grepl("wrong-place-secret", api$requests[[1]]$url, fixed = TRUE))
+  expect_null(auth_header(api$requests[[1]]))
+
+  for (call in list(
+    function() or_odds("standard", key = "wrong-place-secret"),
+    function() or_coverage(api_key = "wrong-place-secret"),
+    function() or_raw(.Key = "wrong-place-secret")
+  )) {
+    msg <- tryCatch(call(), error = conditionMessage)
+    expect_match(msg, "nothing was sent")
+    expect_no_match(msg, "wrong-place-secret")
+  }
+  expect_length(api$requests, 1)
+})
+
+test_that("a printed result shows the body and one line of tokens, not the attributes", {
+  fresh_cache()
+  mock_api(fixture_response("v2-status.status.json", headers = list(`X-Tokens-Cost` = "0")))
+  status <- or_status()
+  out <- capture.output(print(status))
+  expect_false(any(grepl("attr(", out, fixed = TRUE)))
+  expect_equal(out[length(out)], "# tokens: cost 0")
+  expect_s3_class(status, "oddsrelay_result")
+  expect_false(inherits(unclass(status), "oddsrelay_result"))
+})
+
 test_that("a key an HTTP header cannot carry is refused without echoing it", {
   expect_error(or_usage(.key = "abc def-secret"), "copy it again")
   expect_no_match(tryCatch(or_usage(.key = "abc def-secret"), error = conditionMessage), "secret")
@@ -77,16 +108,21 @@ test_that("a 429 waits Retry-After and tries again, three requests in all", {
   busy <- fixture_response("error-429.too_many_requests.json", 429L, list(`Retry-After` = "2"))
 
   api <- mock_api(busy, busy, fixture_response("v2-status.status.json"))
-  expect_equal(or_status()$products$raw, "ok")
+  expect_equal(suppressMessages(or_status())$products$raw, "ok")
   expect_equal(waits, c(2, 2))
 
   waits <- c()
   api <- mock_api(busy, busy, busy, fixture_response("v2-status.status.json"))
-  cnd <- expect_error(or_status(), class = "oddsrelay_too_many_requests")
+  cnd <- suppressMessages(expect_error(or_status(), class = "oddsrelay_too_many_requests"))
   expect_s3_class(cnd, "oddsrelay_http_429")
   expect_equal(cnd$retry_after, 2)
   expect_length(api$requests, 3)
   expect_equal(waits, c(2, 2))
+
+  waits <- c() # no Retry-After: one second, and the wait is announced
+  mock_api(httr2::response(429), fixture_response("v2-status.status.json"))
+  expect_message(or_status(), "trying again in 1 s")
+  expect_equal(waits, 1)
 })
 
 test_that("a 402 carries cost, remaining and resets_at", {
@@ -132,6 +168,19 @@ test_that("a refusal with no body still signals a classed condition", {
   cnd <- expect_error(or_status(), class = "oddsrelay_http_502")
   expect_null(cnd$code)
   expect_match(conditionMessage(cnd), "HTTP 502")
+
+  mock_api(httr2::response(503, headers = list(`X-OddsRelay-Request-Id` = "or_req_11111111111111111111111111111111")))
+  cnd <- expect_error(or_status(), class = "oddsrelay_http_503")
+  expect_equal(cnd$request_id, "or_req_11111111111111111111111111111111")
+})
+
+test_that("a plain-text refusal is told by its first line", {
+  fresh_cache()
+  mock_api(httr2::response(503, headers = list(`Content-Type` = "text/plain; charset=utf-8"),
+    body = charToRaw("warming\nsecond line\n")))
+  cnd <- expect_error(or_healthz(), class = "oddsrelay_http_503")
+  expect_match(conditionMessage(cnd), "HTTP 503: warming")
+  expect_no_match(conditionMessage(cnd), "second line")
 })
 
 test_that("a 401 without a key says where the key goes", {

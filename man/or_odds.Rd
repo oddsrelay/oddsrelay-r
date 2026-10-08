@@ -25,7 +25,8 @@ timestamp. The API refuses names and values it does not know.}
 \item{.key}{Your API key. Left out, it is read from the \code{ODDSRELAY_KEY}
 environment variable.}
 
-\item{id}{An event id, as found in \code{event_id} on a board or a raw page.}
+\item{id}{An event id: \code{event_id} on a board, or \code{id} on a raw page or an
+\code{or_events()} row.}
 }
 \value{
 The decoded JSON body as a list, with arrays of records as data

@@ -3,7 +3,8 @@
 * First release. One function for each GET route of the OddsRelay API, from
   `or_odds()` and `or_raw()` to `or_usage()` and `or_healthz()`.
 * The key comes from `ODDSRELAY_KEY` or a `.key` argument and travels only in
-  the `Authorization` header.
+  the `Authorization` header. A filter named like a key is refused before
+  anything is sent, so the key never lands in a URL.
 * Replies are asked for gzip-compressed. Each URL's `ETag` is kept for the
   session, so an unchanged reply comes back as a 304 that spends no tokens,
   returned as the body you already had with `attr(x, "not_modified")` set to
@@ -13,3 +14,4 @@
   carrying `request_id`; a 402 also carries `cost`, `remaining` and
   `resets_at`.
 * The token and rate limit headers ride on every result as attributes.
+  Printing a result shows the body and one line of tokens.

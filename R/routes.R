@@ -8,7 +8,8 @@
 #'
 #' @param type The board: `"standard"`, `"2up"`, `"dutching"`, `"each-way"`,
 #'   `"extra-place"` or `"bog"`.
-#' @param id An event id, as found in `event_id` on a board or a raw page.
+#' @param id An event id: `event_id` on a board, or `id` on a raw page or an
+#'   `or_events()` row.
 #' @param ... Filters, named as in the API reference, such as `region`,
 #'   `sports`, `bookmakers` or `markets`. `snake_case` names work too
 #'   (`odds_format` is sent as `oddsFormat`). A vector is sent as one
@@ -107,7 +108,7 @@ or_regions <- function(.key = NULL) {
 #' cat(or_healthz())
 #' or_openapi()$info$version
 #' @export
-or_status <- function(...) {
+or_status <- function(..., .key = NULL) { # the route is keyless: `.key` is accepted and never sent
   or_get("/v2/status", list(...))
 }
 

@@ -33,7 +33,9 @@ the \verb{X-Tokens-*} headers. \code{remaining} and \code{limit} may be \code{"u
 }
 
 A header the reply did not carry reads as \code{NA} (or \code{NULL} for \code{etag} and
-\code{request_id}).
+\code{request_id}). A result that is not a data frame has the class
+\code{oddsrelay_result}, which prints the body and one line of tokens instead of
+every attribute; \code{unclass()} gives the plain list or string.
 }
 
 \section{Polling}{
@@ -55,8 +57,8 @@ and \code{resets_at}. Branch on the class or \code{code}, never on the message. 
 \code{request_id} when you contact us.
 
 A 429 is retried for you: the package waits the \code{Retry-After} seconds and
-tries again, three requests in all, before it signals
-\code{oddsrelay_http_429} with \code{retry_after}. Network failures are left as
+tries again, three requests in all, with a message before each wait, then
+signals \code{oddsrelay_http_429} with \code{retry_after}. Network failures are left as
 'httr2' signals them.
 }
 

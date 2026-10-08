@@ -19,7 +19,9 @@
 #' * `not_modified`: `TRUE` when the API answered 304 (see below).
 #'
 #' A header the reply did not carry reads as `NA` (or `NULL` for `etag` and
-#' `request_id`).
+#' `request_id`). A result that is not a data frame has the class
+#' `oddsrelay_result`, which prints the body and one line of tokens instead of
+#' every attribute; `unclass()` gives the plain list or string.
 #'
 #' @section Polling:
 #' For each URL it has fetched in this session, the package keeps the reply's
@@ -37,8 +39,8 @@
 #' `request_id` when you contact us.
 #'
 #' A 429 is retried for you: the package waits the `Retry-After` seconds and
-#' tries again, three requests in all, before it signals
-#' `oddsrelay_http_429` with `retry_after`. Network failures are left as
+#' tries again, three requests in all, with a message before each wait, then
+#' signals `oddsrelay_http_429` with `retry_after`. Network failures are left as
 #' 'httr2' signals them.
 #'
 #' @keywords internal

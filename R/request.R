@@ -25,8 +25,17 @@ resolve_key <- function(key = NULL) {
 # TRUE and FALSE become true and false, date-times become UTC timestamps, and NULL is left out.
 query_params <- function(params) {
   params <- Filter(Negate(is.null), params)
-  if (length(params) && (is.null(names(params)) || any(names(params) == ""))) {
+  if (!length(params)) return(list())
+  if (is.null(names(params)) || any(names(params) == "")) {
     stop("Every filter needs a name, such as `sports = \"tennis\"`.", call. = FALSE)
+  }
+  # A key passed under the wrong name would otherwise be sent as a filter, in the URL. No filter starts with a dot
+  # or is named like a key, so these are refused before any request, without echoing the value.
+  key_like <- startsWith(names(params), ".") |
+    tolower(gsub("[-_]", "", names(params))) %in% c("key", "apikey", "xapikey", "authorization", "token", "bearer")
+  if (any(key_like)) {
+    stop("`", names(params)[key_like][1], "` is not a filter, so nothing was sent. ",
+         "Pass the key as `.key` or set the ODDSRELAY_KEY environment variable.", call. = FALSE)
   }
   names(params) <- gsub("_([a-z])", "\\U\\1", names(params), perl = TRUE)
   lapply(params, function(value) {
@@ -62,7 +71,9 @@ or_get <- function(path, params = list(), key = "", simplify = TRUE) {
   for (attempt in seq_len(max_tries)) {
     resp <- httr2::req_perform(req)
     if (httr2::resp_status(resp) != 429 || attempt == max_tries) break
-    wait(retry_after(resp))
+    seconds <- retry_after(resp)
+    message("OddsRelay API: HTTP 429, trying again in ", seconds, " s.")
+    wait(seconds)
   }
 
   status <- httr2::resp_status(resp)
@@ -102,26 +113,39 @@ with_headers <- function(x, resp, not_modified = FALSE) {
   attr(x, "etag") <- httr2::resp_header(resp, "ETag")
   attr(x, "request_id") <- httr2::resp_header(resp, "X-OddsRelay-Request-Id")
   attr(x, "not_modified") <- not_modified
+  if (!is.data.frame(x)) class(x) <- c("oddsrelay_result", class(x)) # printed without the attributes, below
   x
+}
+
+#' @export
+print.oddsrelay_result <- function(x, ...) {
+  body <- unclass(x)
+  for (name in c("tokens", "rate_limit", "etag", "request_id", "not_modified")) attr(body, name) <- NULL
+  print(body, ...)
+  sent <- Filter(function(value) !is.na(value), attr(x, "tokens"))
+  notes <- c(if (length(sent)) paste("tokens:", paste(names(sent), sent, collapse = ", ")),
+             if (isTRUE(attr(x, "not_modified"))) "not modified (304)")
+  if (length(notes)) cat("# ", paste(notes, collapse = "; "), "\n", sep = "")
+  invisible(x)
 }
 
 api_condition <- function(resp, key) {
   status <- httr2::resp_status(resp)
-  error <- tryCatch(
-    jsonlite::parse_json(httr2::resp_body_string(resp, encoding = "UTF-8"))$error,
-    error = function(e) NULL # the front door's 429 and 502 have an empty body
-  )
+  # a key never reaches a condition, even if a reply ever echoed one
+  scrub <- function(text) if (nzchar(key)) gsub(key, "***", text, fixed = TRUE) else text
+  body <- tryCatch(httr2::resp_body_string(resp, encoding = "UTF-8"), error = function(e) "") # 429, 502: empty
+  error <- tryCatch(jsonlite::parse_json(body)$error, error = function(e) NULL)
   if (!is.list(error)) error <- list()
-  if (nzchar(key)) { # a key never reaches a condition, even if a message ever echoed one
-    for (name in setdiff(names(error), "code")) {
-      if (is.character(error[[name]])) error[[name]] <- gsub(key, "***", error[[name]], fixed = TRUE)
-    }
+  for (name in setdiff(names(error), "code")) {
+    if (is.character(error[[name]])) error[[name]] <- scrub(error[[name]])
   }
+  # A plain-text refusal (/healthz answers 503 "warming" while starting) is told by its first line.
+  text <- if (!grepl("json", httr2::resp_content_type(resp) %||% "", fixed = TRUE)) trimws(body) else ""
   code <- error$code
   request_id <- error$request_id %||% httr2::resp_header(resp, "X-OddsRelay-Request-Id")
   message <- paste0(
     "OddsRelay API: HTTP ", status, if (!is.null(code)) paste0(" ", code), ": ",
-    error$message %||% "the reply carried no details",
+    error$message %||% (if (nzchar(text)) scrub(sub("\n.*", "", text))) %||% "the reply carried no details",
     if (status == 401 && !nzchar(key)) " Set the ODDSRELAY_KEY environment variable to your key.",
     if (!is.null(request_id)) paste0(" (request_id ", request_id, ")")
   )
