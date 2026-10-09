@@ -1,12 +1,3 @@
-## Before submitting (delete this section)
-
-The `Authors@R` field names "OddsRelay" as maintainer, a placeholder. CRAN asks for a named person as maintainer,
-so replace it with that person (given and family name, role `c("aut", "cre")`) and keep OddsRelay as `cph`, then
-rebuild and re-run the check below.
-
-Push https://github.com/oddsrelay/oddsrelay-r public first. Until then the GitHub URLs in `DESCRIPTION` and the
-README's licence link answer 404, and the sentence below saying they resolve is not yet true.
-
 ## Test environments
 
 * local macOS (aarch64-apple-darwin20), R 4.5.3

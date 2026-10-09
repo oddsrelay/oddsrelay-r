@@ -1,8 +1,10 @@
 Package: oddsrelay
 Title: Client for the 'OddsRelay' Sports Odds API
 Version: 0.1.0
-Authors@R: 
-    person("OddsRelay", role = c("aut", "cre", "cph"), email = "hello@oddsrelay.io")
+Authors@R: c(
+    person("James", "OddsRelay", role = c("aut", "cre"), email = "hello@oddsrelay.io"),
+    person("OddsRelay", role = "cph")
+  )
 Description: Provides one function for each read endpoint of the
     'OddsRelay' web service <https://oddsrelay.io/docs>, which serves
     bookmaker and exchange odds for the UK and Ireland. Requests ask for
