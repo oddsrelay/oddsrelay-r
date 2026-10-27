@@ -1,6 +1,6 @@
 # oddsrelay
 
-The OddsRelay R client. One function for each GET route of the [OddsRelay API](https://oddsrelay.io/docs), which
+The OddsRelay R client. One function for each live-feed data and lookup route of the [OddsRelay API](https://oddsrelay.io/docs), which
 serves bookmaker and exchange odds for the UK & Ireland as JSON. Replies come back as lists and data frames.
 
 ## Install
@@ -63,6 +63,8 @@ names(or_coverage(region = "uk")$products)
 | `or_pricing()` | `GET /v2/pricing` | The token rate card |
 | `or_openapi()` | `GET /v2/openapi.json` | The API description (keyless) |
 | `or_healthz()` | `GET /healthz` | A plain-text liveness check (keyless) |
+
+The historical odds routes (`GET /v2/historical/*`) have no function yet.
 
 Each returns the decoded body with every field kept, including fields the API adds after this release. Arrays of
 records become data frames, so `board$data` above is one. Pass `format = "bare"` where a route takes it to get the data
